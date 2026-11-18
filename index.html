@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Freelancer GST Invoice Generator | Indian Tax Compliant</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- QRCode.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Print Styles for Pixel-Perfect A4 Invoicing */
+    @media print {
+      body {
+        background: white !important;
+        color: #111827 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      #invoice-preview-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      .invoice-page {
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        padding: 16mm 14mm !important;
+        width: 100% !important;
+        min-height: 297mm !important;
+        page-break-after: always;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+    }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.03);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.25);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.45);
+    }
+
+    /* Template Color Themes */
+    .theme-indigo .theme-accent-bg { background-color: #4f46e5; }
+    .theme-indigo .theme-accent-text { color: #4f46e5; }
+    .theme-indigo .theme-accent-border { border-color: #4f46e5; }
+    .theme-indigo .theme-light-bg { background-color: #f5f3ff; }
+
+    .theme-emerald .theme-accent-bg { background-color: #059669; }
+    .theme-emerald .theme-accent-text { color: #059669; }
+    .theme-emerald .theme-accent-border { border-color: #059669; }
+    .theme-emerald .theme-light-bg { background-color: #ecfdf5; }
+
+    .theme-slate .theme-accent-bg { background-color: #1e293b; }
+    .theme-slate .theme-accent-text { color: #1e293b; }
+    .theme-slate .theme-accent-border { border-color: #1e293b; }
+    .theme-slate .theme-light-bg { background-color: #f8fafc; }
+
+    .theme-blue .theme-accent-bg { background-color: #0284c7; }
+    .theme-blue .theme-accent-text { color: #0284c7; }
+    .theme-blue .theme-accent-border { border-color: #0284c7; }
+    .theme-blue .theme-light-bg { background-color: #f0f9ff; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+  <!-- Top Navigation Bar -->
+  <header class="no-print bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between flex-wrap gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+          <i data-lucide="receipt-text" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 leading-tight flex items-center gap-2">
+            GST Invoice Builder
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+              <i data-lucide="shield-check" class="w-3 h-3 mr-1"></i> GST Compliant
+            </span>
+          </h1>
+          <p class="text-xs text-slate-500">For Indian Freelancers, Agencies & Remote Contractors</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2">
+        <button id="btn-save-draft" title="Save draft locally" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition shadow-sm">
+          <i data-lucide="save" class="w-3.5 h-3.5"></i>
+          <span>Save Profile</span>
+        </button>
+
+        <button id="btn-reset" title="Reset to sample data" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition shadow-sm">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          <span>Reset Sample</span>
+        </button>
+
+        <div class="h-6 w-px bg-slate-200 mx-1"></div>
+
+        <button id="btn-print" class="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 active:bg-indigo-800 transition shadow-sm shadow-indigo-200">
+          <i data-lucide="printer" class="w-4 h-4"></i>
+          <span>Print / PDF Download</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <main class="flex-1 max-w-[1700px] w-full mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 xl:grid-cols-12 gap-8">
+    
+    <!-- LEFT COLUMN: Editor Form (5 cols on xl) -->
+    <div class="no-print xl:col-span-5 space-y-6">
+
+      <!-- Quick Alert: LUT / Export / Domestic Guide -->
+      <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex gap-3 text-xs text-indigo-900 leading-relaxed shadow-sm">
+        <i data-lucide="info" class="w-4 h-4 text-indigo-600 shrink-0 mt-0.5"></i>
+        <div>
+          <span class="font-semibold text-indigo-950">GST Rule Quick Tip:</span>
+          Billing Indian clients in your state? <strong>CGST + SGST (9%+9%)</strong> applies automatically. Billing clients in another state? <strong>IGST (18%)</strong> applies. Foreign/Overseas clients? Select <strong>Export under LUT (0%)</strong> with your ARN.
+        </div>
+      </div>
+
+      <!-- Theme & Layout Customization Bar -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold text-slate-600">Color Theme:</span>
+          <div class="flex items-center gap-1.5" id="theme-selector">
+            <button data-theme="theme-indigo" class="w-6 h-6 rounded-full bg-indigo-600 ring-2 ring-offset-2 ring-indigo-600 transition" title="Indigo Modern"></button>
+            <button data-theme="theme-emerald" class="w-6 h-6 rounded-full bg-emerald-600 ring-2 ring-offset-2 ring-transparent transition hover:scale-105" title="Emerald Growth"></button>
+            <button data-theme="theme-blue" class="w-6 h-6 rounded-full bg-sky-600 ring-2 ring-offset-2 ring-transparent transition hover:scale-105" title="Sky Tech"></button>
+            <button data-theme="theme-slate" class="w-6 h-6 rounded-full bg-slate-800 ring-2 ring-offset-2 ring-transparent transition hover:scale-105" title="Minimal Slate"></button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold text-slate-600">Currency:</span>
+          <select id="invoice-currency" class="text-xs font-medium border border-slate-300 rounded-lg px-2.5 py-1.5 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="INR" selected>INR (₹) - Indian Rupee</option>
+            <option value="USD">USD ($) - US Dollar</option>
+            <option value="EUR">EUR (€) - Euro</option>
+            <option value="GBP">GBP (£) - British Pound</option>
+            <option value="AED">AED (د.إ) - UAE Dirham</option>
+            <option value="CAD">CAD ($) - Canadian Dollar</option>
+            <option value="SGD">SGD ($) - Singapore Dollar</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- SECTION 1: INVOICE META -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-3.5 bg-slate-50/70 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+            <i data-lucide="file-cog" class="w-4 h-4 text-indigo-600"></i>
+            Invoice Settings & Nature of Supply
+          </h2>
+        </div>
+        <div class="p-5 space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Invoice Document Title</label>
+              <select id="invoice-title" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-indigo-500">
+                <option value="TAX INVOICE" selected>TAX INVOICE (Rule 46)</option>
+                <option value="BILL OF SUPPLY">BILL OF SUPPLY (Exempt / LUT)</option>
+                <option value="PROFORMA INVOICE">PROFORMA INVOICE</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Invoice Number <span class="text-rose-500">*</span></label>
+              <input type="text" id="invoice-number" value="INV-2026-0042" class="w-full text-xs font-mono border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 uppercase" placeholder="e.g. INV-2026-01">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Invoice Date <span class="text-rose-500">*</span></label>
+              <input type="date" id="invoice-date" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Payment Due Date</label>
+              <input type="date" id="invoice-due-date" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+            </div>
+          </div>
+
+          <!-- Nature of GST Supply -->
+          <div class="pt-2 border-t border-slate-100">
+            <label class="block text-xs font-semibold text-slate-800 mb-1.5">Tax Supply Type (GST Category)</label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" id="supply-type-radio-group">
+              <label class="cursor-pointer border rounded-lg p-2.5 flex items-start gap-2 bg-indigo-50/50 border-indigo-300 has-[:checked]:border-indigo-600 has-[:checked]:bg-indigo-50">
+                <input type="radio" name="supplyType" value="auto" checked class="mt-0.5 text-indigo-600 focus:ring-indigo-500">
+                <div>
+                  <div class="text-xs font-semibold text-slate-900">Auto-Detect</div>
+                  <div class="text-[10px] text-slate-500">Based on State Codes</div>
+                </div>
+              </label>
+
+              <label class="cursor-pointer border rounded-lg p-2.5 flex items-start gap-2 border-slate-200 hover:border-slate-300 has-[:checked]:border-indigo-600 has-[:checked]:bg-indigo-50">
+                <input type="radio" name="supplyType" value="export_lut" class="mt-0.5 text-indigo-600 focus:ring-indigo-500">
+                <div>
+                  <div class="text-xs font-semibold text-slate-900">Export (LUT - 0%)</div>
+                  <div class="text-[10px] text-slate-500">Foreign client without IGST</div>
+                </div>
+              </label>
+
+              <label class="cursor-pointer border rounded-lg p-2.5 flex items-start gap-2 border-slate-200 hover:border-slate-300 has-[:checked]:border-indigo-600 has-[:checked]:bg-indigo-50">
+                <input type="radio" name="supplyType" value="export_igst" class="mt-0.5 text-indigo-600 focus:ring-indigo-500">
+                <div>
+                  <div class="text-xs font-semibold text-slate-900">Export (With IGST)</div>
+                  <div class="text-[10px] text-slate-500">Foreign client with tax</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Export LUT ARN Number (Hidden unless export_lut is chosen) -->
+          <div id="lut-arn-container" class="hidden p-3 bg-amber-50 rounded-lg border border-amber-200 space-y-1">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-semibold text-amber-900 flex items-center gap-1.5">
+                <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-amber-600"></i>
+                LUT ARN (Letter of Undertaking Number)
+              </label>
+              <span class="text-[10px] text-amber-700">Required on export invoices</span>
+            </div>
+            <input type="text" id="lut-arn" value="AD330424001928K" placeholder="e.g. AD330424001928K" class="w-full text-xs font-mono uppercase bg-white border border-amber-300 rounded px-2.5 py-1.5 focus:ring-2 focus:ring-amber-500">
+          </div>
+
+          <!-- Reverse Charge toggle -->
+          <div class="flex items-center justify-between pt-1">
+            <div class="flex items-center gap-2">
+              <input type="checkbox" id="reverse-charge" class="rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
+              <label for="reverse-charge" class="text-xs text-slate-700 cursor-pointer font-medium">
+                Reverse Charge Applicable (RCM)?
+              </label>
+            </div>
+            <span class="text-[11px] text-slate-400">Usually 'No' for freelance services</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: FREELANCER (MY) DETAILS -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-3.5 bg-slate-50/70 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+            <i data-lucide="user-check" class="w-4 h-4 text-indigo-600"></i>
+            Freelancer / My Profile (Supplier)
+          </h2>
+          <span class="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded font-medium">Auto-Saved in Browser</span>
+        </div>
+        <div class="p-5 space-y-3.5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-slate-700 mb-1">Your Name / Trade Name <span class="text-rose-500">*</span></label>
+              <input type="text" id="seller-name" value="Aarav Sharma Tech Solutions" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" placeholder="e.g. John Doe / Studio Apex">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">GSTIN (15 Digits) <span class="text-rose-500">*</span></label>
+              <input type="text" id="seller-gstin" value="33AAAAA0000A1Z5" maxlength="15" class="w-full text-xs font-mono uppercase border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" placeholder="33AAAAA0000A1Z5">
+              <span id="seller-gstin-hint" class="text-[10px] text-slate-400 mt-0.5 block">State code auto-fills from first 2 digits</span>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">PAN Number</label>
+              <input type="text" id="seller-pan" value="AAAAA0000A" maxlength="10" class="w-full text-xs font-mono uppercase border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" placeholder="AAAAA0000A">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Email Address</label>
+              <input type="email" id="seller-email" value="billing@aaravsharma.dev" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Phone Number</label>
+              <input type="text" id="seller-phone" value="+91 98765 43210" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-slate-700 mb-1">Registered Address</label>
+              <input type="text" id="seller-address" value="Flat 402, Skyline Residency, Velachery Main Road" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" placeholder="Street, Area, City, Pincode">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-slate-700 mb-1">Supplier State & State Code <span class="text-rose-500">*</span></label>
+              <select id="seller-state" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-indigo-500">
+                <!-- Populated dynamically via JS -->
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: CLIENT DETAILS (RECIPIENT) -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-3.5 bg-slate-50/70 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+            <i data-lucide="building-2" class="w-4 h-4 text-indigo-600"></i>
+            Client Details (Billed To)
+          </h2>
+          <div class="flex items-center gap-1.5">
+            <input type="checkbox" id="client-is-registered" checked class="rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
+            <label for="client-is-registered" class="text-xs text-slate-600 font-medium cursor-pointer">GST Registered</label>
+          </div>
+        </div>
+        <div class="p-5 space-y-3.5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-slate-700 mb-1">Client / Company Name <span class="text-rose-500">*</span></label>
+              <input type="text" id="client-name" value="Nexasphere Digital Private Limited" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" placeholder="Company or Client Full Name">
+            </div>
+            <div id="client-gstin-box">
+              <label class="block text-xs font-medium text-slate-700 mb-1">Client GSTIN</label>
+              <input type="text" id="client-gstin" value="27BBBBB1111B1Z2" maxlength="15" class="w-full text-xs font-mono uppercase border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 27BBBBB1111B1Z2">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Client Email</label>
+              <input type="email" id="client-email" value="accounts@nexasphere.in" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-slate-700 mb-1">Billing Address</label>
+              <input type="text" id="client-address" value="Level 7, BKC Towers, Bandra Kurla Complex, Mumbai - 400051" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-slate-700 mb-1">Place of Supply (State) <span class="text-rose-500">*</span></label>
+              <select id="client-pos-state" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-indigo-500">
+                <!-- Populated dynamically via JS -->
+              </select>
+              <div id="tax-determination-badge" class="mt-2 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 flex items-center gap-1.5 border border-indigo-200">
+                <i data-lucide="calculator" class="w-3.5 h-3.5"></i>
+                <span>Detected: <strong>Inter-State Supply (IGST 18%)</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 4: LINE ITEMS (SERVICES & SAC) -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-3.5 bg-slate-50/70 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+            <i data-lucide="layers" class="w-4 h-4 text-indigo-600"></i>
+            Service Items & SAC Codes
+          </h2>
+          <button type="button" id="btn-add-item" class="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2.5 py-1 rounded-md transition hover:bg-indigo-100">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Add Item
+          </button>
+        </div>
+        <div class="p-5 space-y-4">
+          <div id="items-container" class="space-y-4">
+            <!-- Dynamic items rendered here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 5: BANKING & UPI QR PAYMENT -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-3.5 bg-slate-50/70 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+            <i data-lucide="credit-card" class="w-4 h-4 text-indigo-600"></i>
+            Bank Details & Instant UPI QR
+          </h2>
+          <span class="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-medium border border-emerald-200">Instant UPI Payment</span>
+        </div>
+        <div class="p-5 space-y-3.5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Account Holder Name</label>
+              <input type="text" id="bank-holder" value="Aarav Sharma" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Bank Name</label>
+              <input type="text" id="bank-name" value="HDFC Bank" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Account Number</label>
+              <input type="text" id="bank-account" value="50100234567890" class="w-full text-xs font-mono border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">IFSC Code</label>
+              <input type="text" id="bank-ifsc" value="HDFC0001234" class="w-full text-xs font-mono uppercase border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">UPI ID (VPA for QR Code)</label>
+              <input type="text" id="bank-upi" value="aaravsharma@okhdfcbank" class="w-full text-xs font-mono border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" placeholder="yourname@upi">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Account Type / Branch</label>
+              <input type="text" id="bank-branch" value="Current A/c, Velachery Branch" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-slate-700 mb-1">International Wire / SWIFT (Optional)</label>
+              <input type="text" id="bank-swift" value="SWIFT: HDFCINBBXXX | IBAN: Available on request" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" placeholder="SWIFT Code, Routing #, PayPal, or Wise link">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 6: TERMS, NOTES & SIGNATURE -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-3.5 bg-slate-50/70 border-b border-slate-200">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+            <i data-lucide="feather" class="w-4 h-4 text-indigo-600"></i>
+            Terms & Signatory
+          </h2>
+        </div>
+        <div class="p-5 space-y-3.5">
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">Payment Terms & Notes</label>
+            <textarea id="invoice-terms" rows="2" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500">1. Payment is due within 15 days of invoice issue.
+2. Please quote Invoice Number in bank transfer narration.
+3. TDS deduction details (Form 16A) to be emailed upon filing.</textarea>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Signatory Title / Name</label>
+              <input type="text" id="signatory-name" value="Aarav Sharma (Proprietor)" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Digital Stamp / Signatory Note</label>
+              <input type="text" id="signatory-label" value="Authorized Signatory" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Pixel-Perfect Live Printable A4 Preview (7 cols on xl) -->
+    <div class="xl:col-span-7 flex flex-col items-center">
+      
+      <!-- Preview Header Controls (Non-printing) -->
+      <div class="no-print w-full flex items-center justify-between pb-3 px-1 text-xs text-slate-500">
+        <div class="flex items-center gap-1.5 font-medium">
+          <i data-lucide="eye" class="w-4 h-4 text-indigo-600"></i>
+          <span>Live A4 Preview (Standard Indian GST Format)</span>
+        </div>
+        <div class="text-slate-400 text-[11px]">
+          Press <kbd class="px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded font-mono">Ctrl+P</kbd> or click Print button
+        </div>
+      </div>
+
+      <!-- THE INVOICE CONTAINER (Matches Standard A4 Ratio: 210mm x 297mm) -->
+      <div id="invoice-preview-container" class="w-full max-w-[800px] bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden transition-all duration-200">
+        <div id="invoice-sheet" class="invoice-page theme-indigo p-8 sm:p-12 text-slate-800 flex flex-col justify-between min-h-[1050px]">
+          
+          <!-- TOP HEADER -->
+          <div>
+            <!-- Banner / Header Top -->
+            <div class="flex justify-between items-start pb-6 border-b border-slate-200 gap-4">
+              <div>
+                <span id="preview-doc-title" class="inline-block text-xs font-extrabold uppercase tracking-widest text-indigo-700 bg-indigo-50 px-3 py-1 rounded-md border border-indigo-200/60 mb-2">
+                  TAX INVOICE
+                </span>
+                <h1 id="preview-seller-name" class="text-2xl font-extrabold tracking-tight text-slate-900 leading-snug">
+                  Aarav Sharma Tech Solutions
+                </h1>
+                <p id="preview-seller-address" class="text-xs text-slate-600 max-w-sm mt-1 leading-relaxed">
+                  Flat 402, Skyline Residency, Velachery Main Road
+                </p>
+                <div class="mt-2 text-xs text-slate-700 space-y-0.5">
+                  <div><strong>State:</strong> <span id="preview-seller-state">Tamil Nadu (33)</span></div>
+                  <div><strong>GSTIN:</strong> <span id="preview-seller-gstin" class="font-mono font-bold text-slate-900">33AAAAA0000A1Z5</span></div>
+                  <div><strong>PAN:</strong> <span id="preview-seller-pan" class="font-mono">AAAAA0000A</span></div>
+                  <div id="preview-seller-contact" class="text-[11px] text-slate-500">Email: billing@aaravsharma.dev | Ph: +91 98765 43210</div>
+                </div>
+              </div>
+
+              <!-- Invoice Meta Box -->
+              <div class="text-right shrink-0 bg-slate-50/80 p-4 rounded-xl border border-slate-200/70 min-w-[210px]">
+                <div class="text-[11px] uppercase font-bold tracking-wider text-slate-400">Invoice Number</div>
+                <div id="preview-invoice-no" class="text-lg font-mono font-extrabold text-indigo-700 tracking-tight">INV-2026-0042</div>
+                
+                <div class="mt-3 pt-3 border-t border-slate-200/80 space-y-1 text-xs">
+                  <div class="flex justify-between gap-4">
+                    <span class="text-slate-500">Invoice Date:</span>
+                    <span id="preview-invoice-date" class="font-medium text-slate-800">18 Nov 2026</span>
+                  </div>
+                  <div class="flex justify-between gap-4">
+                    <span class="text-slate-500">Due Date:</span>
+                    <span id="preview-due-date" class="font-medium text-slate-800">03 Dec 2026</span>
+                  </div>
+                  <div class="flex justify-between gap-4">
+                    <span class="text-slate-500">Reverse Charge:</span>
+                    <span id="preview-rcm" class="font-medium text-slate-800">No</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- EXPORT LUT CLAUSE (Appears if Export) -->
+            <div id="preview-lut-banner" class="hidden mt-3 p-2.5 bg-amber-50 rounded-lg border border-amber-200 text-center">
+              <p class="text-[11px] font-bold text-amber-900 uppercase tracking-wide">
+                SUPPLY MEANT FOR EXPORT UNDER BOND OR LETTER OF UNDERTAKING (LUT) WITHOUT PAYMENT OF INTEGRATED TAX
+              </p>
+              <p class="text-[10px] text-amber-800 font-mono mt-0.5">
+                LUT ARN: <span id="preview-lut-arn" class="font-bold">AD330424001928K</span>
+              </p>
+            </div>
+
+            <!-- BILLED TO & PLACE OF SUPPLY -->
+            <div class="grid grid-cols-2 gap-6 my-6 p-4 rounded-xl bg-slate-50/50 border border-slate-100">
+              <div>
+                <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">Billed To (Client / Recipient)</span>
+                <h3 id="preview-client-name" class="text-sm font-bold text-slate-900">Nexasphere Digital Private Limited</h3>
+                <p id="preview-client-address" class="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                  Level 7, BKC Towers, Bandra Kurla Complex, Mumbai - 400051
+                </p>
+                <div class="mt-2 text-xs text-slate-700 space-y-0.5">
+                  <div id="preview-client-gstin-row"><strong>Client GSTIN:</strong> <span id="preview-client-gstin" class="font-mono font-semibold text-slate-900">27BBBBB1111B1Z2</span></div>
+                  <div id="preview-client-email-row" class="text-[11px] text-slate-500">Email: accounts@nexasphere.in</div>
+                </div>
+              </div>
+
+              <div class="text-right">
+                <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">Place of Supply</span>
+                <div id="preview-pos-name" class="text-sm font-bold text-indigo-900">Maharashtra (27)</div>
+                <div class="mt-2 text-xs text-slate-600 space-y-0.5">
+                  <div><strong>Supply Nature:</strong> <span id="preview-supply-type" class="font-semibold text-slate-800">Inter-State Supply</span></div>
+                  <div><strong>Applicable Tax:</strong> <span id="preview-tax-type" class="font-semibold text-indigo-700">IGST @ 18%</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TABLE OF SERVICES -->
+            <div class="mt-4 overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-y-2 border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-800">
+                    <th class="py-2.5 px-2 w-8 text-center">#</th>
+                    <th class="py-2.5 px-3">Description of Services</th>
+                    <th class="py-2.5 px-2 text-center w-20">SAC</th>
+                    <th class="py-2.5 px-2 text-center w-14">Qty</th>
+                    <th class="py-2.5 px-3 text-right w-24">Rate</th>
+                    <th class="py-2.5 px-3 text-right w-28">Taxable Val</th>
+                    <th class="py-2.5 px-3 text-right w-28">Total</th>
+                  </tr>
+                </thead>
+                <tbody id="preview-table-body" class="divide-y divide-slate-200 text-xs text-slate-700 font-normal">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- TOTALS & TAX BREAKDOWN SUMMARY -->
+            <div class="mt-4 pt-2 border-t border-slate-200 grid grid-cols-12 gap-6 items-start">
+              
+              <!-- Left: Amount in Words & Notes -->
+              <div class="col-span-7 space-y-3">
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200/70">
+                  <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-0.5">Total Amount in Words</span>
+                  <p id="preview-amount-words" class="text-xs font-semibold text-slate-800 capitalize leading-snug">
+                    One Lakh Eighteen Thousand Rupees Only
+                  </p>
+                </div>
+
+                <!-- Terms and Conditions -->
+                <div class="text-[11px] text-slate-500 leading-relaxed">
+                  <span class="font-bold text-slate-700 block mb-1">Terms & Conditions:</span>
+                  <div id="preview-terms-text" class="whitespace-pre-line">1. Payment is due within 15 days of invoice issue.
+2. Please quote Invoice Number in bank transfer narration.
+3. TDS deduction details (Form 16A) to be emailed upon filing.</div>
+                </div>
+              </div>
+
+              <!-- Right: Detailed Math Calculations -->
+              <div class="col-span-5 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/80 space-y-2 text-xs">
+                <div class="flex justify-between text-slate-600">
+                  <span>Taxable Subtotal:</span>
+                  <span id="preview-subtotal" class="font-mono font-medium text-slate-900">₹1,00,000.00</span>
+                </div>
+
+                <!-- CGST Row -->
+                <div id="row-cgst" class="flex justify-between text-slate-600">
+                  <span>CGST (<span id="preview-cgst-rate">9</span>%):</span>
+                  <span id="preview-cgst-amt" class="font-mono font-medium text-slate-900">₹0.00</span>
+                </div>
+
+                <!-- SGST Row -->
+                <div id="row-sgst" class="flex justify-between text-slate-600">
+                  <span>SGST (<span id="preview-sgst-rate">9</span>%):</span>
+                  <span id="preview-sgst-amt" class="font-mono font-medium text-slate-900">₹0.00</span>
+                </div>
+
+                <!-- IGST Row -->
+                <div id="row-igst" class="flex justify-between text-indigo-700 font-medium">
+                  <span>IGST (<span id="preview-igst-rate">18</span>%):</span>
+                  <span id="preview-igst-amt" class="font-mono font-medium text-indigo-700">₹18,000.00</span>
+                </div>
+
+                <!-- Round Off Row (Optional) -->
+                <div id="row-roundoff" class="flex justify-between text-slate-500 text-[11px]">
+                  <span>Round off:</span>
+                  <span id="preview-roundoff" class="font-mono">₹0.00</span>
+                </div>
+
+                <!-- Grand Total -->
+                <div class="pt-2 border-t-2 border-slate-800 flex justify-between items-baseline">
+                  <span class="text-sm font-extrabold text-slate-900">Total Due:</span>
+                  <span id="preview-grand-total" class="text-base font-mono font-extrabold text-indigo-700">₹1,18,000.00</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- FOOTER: BANK DETAILS, DYNAMIC UPI QR, AND AUTHORIZED SIGNATURE -->
+          <div class="mt-8 pt-5 border-t border-slate-200">
+            <div class="grid grid-cols-12 gap-6 items-end">
+              
+              <!-- Bank Transfer Info -->
+              <div class="col-span-5 text-xs text-slate-600 space-y-1">
+                <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">Bank Payment Details</span>
+                <div><strong>A/C Name:</strong> <span id="preview-bank-holder">Aarav Sharma</span></div>
+                <div><strong>Bank:</strong> <span id="preview-bank-name">HDFC Bank</span></div>
+                <div><strong>A/C No:</strong> <span id="preview-bank-acc" class="font-mono font-bold text-slate-900">50100234567890</span></div>
+                <div><strong>IFSC Code:</strong> <span id="preview-bank-ifsc" class="font-mono font-bold text-slate-900">HDFC0001234</span></div>
+                <div id="preview-bank-extra" class="text-[10px] text-slate-500">Current A/c, Velachery Branch</div>
+                <div id="preview-bank-swift-row" class="text-[10px] text-slate-500 font-mono mt-1">SWIFT: HDFCINBBXXX</div>
+              </div>
+
+              <!-- Instant Scan & Pay UPI QR -->
+              <div class="col-span-3 flex flex-col items-center justify-center p-2 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                <div id="upi-qrcode" class="p-1.5 bg-white rounded-lg shadow-sm border border-slate-200"></div>
+                <span class="text-[9px] font-bold text-slate-700 mt-1 uppercase tracking-tight flex items-center gap-1">
+                  <i data-lucide="qr-code" class="w-3 h-3 text-indigo-600"></i> Scan to Pay (UPI)
+                </span>
+                <span id="preview-upi-id" class="text-[9px] text-slate-500 font-mono truncate max-w-[130px]">aaravsharma@okhdfcbank</span>
+              </div>
+
+              <!-- Authorized Signatory Stamp Box -->
+              <div class="col-span-4 text-right flex flex-col justify-end items-end">
+                <div class="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-8">For <span id="preview-signatory-business" class="font-bold text-slate-800">Aarav Sharma Tech Solutions</span></div>
+                <div class="w-40 border-b border-dashed border-slate-400 pb-1 mb-1 text-center">
+                  <span class="text-xs font-serif italic text-indigo-900 font-semibold">Aarav Sharma</span>
+                </div>
+                <div id="preview-signatory-title" class="text-xs font-bold text-slate-800">Aarav Sharma (Proprietor)</div>
+                <div id="preview-signatory-sub" class="text-[10px] text-slate-500">Authorized Signatory</div>
+              </div>
+
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-[10px] text-slate-400">
+              <span>This is a computer generated tax invoice in compliance with Section 31 of CGST Act, 2017.</span>
+              <span>Page 1 of 1</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    // Indian State Names and 2-Digit GST State Codes
+    const GST_STATES = [
+      { code: "01", name: "Jammu & Kashmir" },
+      { code: "02", name: "Himachal Pradesh" },
+      { code: "03", name: "Punjab" },
+      { code: "04", name: "Chandigarh" },
+      { code: "05", name: "Uttarakhand" },
+      { code: "06", name: "Haryana" },
+      { code: "07", name: "Delhi" },
+      { code: "08", name: "Rajasthan" },
+      { code: "09", name: "Uttar Pradesh" },
+      { code: "10", name: "Bihar" },
+      { code: "11", name: "Sikkim" },
+      { code: "12", name: "Arunachal Pradesh" },
+      { code: "13", name: "Nagaland" },
+      { code: "14", name: "Manipur" },
+      { code: "15", name: "Mizoram" },
+      { code: "16", name: "Tripura" },
+      { code: "17", name: "Meghalaya" },
+      { code: "18", name: "Assam" },
+      { code: "19", name: "West Bengal" },
+      { code: "20", name: "Jharkhand" },
+      { code: "21", name: "Odisha" },
+      { code: "22", name: "Chhattisgarh" },
+      { code: "23", name: "Madhya Pradesh" },
+      { code: "24", name: "Gujarat" },
+      { code: "26", name: "Dadra & Nagar Haveli and Daman & Diu" },
+      { code: "27", name: "Maharashtra" },
+      { code: "29", name: "Karnataka" },
+      { code: "30", name: "Goa" },
+      { code: "31", name: "Lakshadweep" },
+      { code: "32", name: "Kerala" },
+      { code: "33", name: "Tamil Nadu" },
+      { code: "34", name: "Puducherry" },
+      { code: "35", name: "Andaman & Nicobar Islands" },
+      { code: "36", name: "Telangana" },
+      { code: "37", name: "Andhra Pradesh" },
+      { code: "38", name: "Ladakh" },
+      { code: "96", name: "Other Territory" },
+      { code: "99", name: "Centre Jurisdiction / Outside India (Export)" }
+    ];
+
+    // Popular SAC codes for Freelancers & Service Providers
+    const COMMON_SAC_CODES = [
+      { code: "998314", label: "998314 - Web design & software programming" },
+      { code: "998311", label: "998311 - IT consulting & support services" },
+      { code: "998312", label: "998312 - Application development services" },
+      { code: "998365", label: "998365 - Graphic, UI/UX, & multimedia design" },
+      { code: "998361", label: "998361 - Advertising, marketing, & social media" },
+      { code: "998439", label: "998439 - Content writing, copywriting & editing" },
+      { code: "998431", label: "998431 - Video production & audio editing" },
+      { code: "998391", label: "998391 - Technical consultancy & SEO services" },
+      { code: "998313", label: "998313 - Cloud hosting & DevOps administration" },
+      { code: "998399", label: "998399 - Other professional services n.e.c." }
+    ];
+
+    // Initial Line Items
+    let lineItems = [
+      {
+        id: 1,
+        desc: "Full-Stack Web Application Development (React & Node.js)",
+        sac: "998314",
+        qty: 1,
+        unit: "Project",
+        rate: 75000,
+        gstRate: 18
+      },
+      {
+        id: 2,
+        desc: "UI/UX System Design & Interactive Prototype (Figma)",
+        sac: "998365",
+        qty: 25,
+        unit: "Hours",
+        rate: 1000,
+        gstRate: 18
+      }
+    ];
+
+    let qrcodeInstance = null;
+
+    // Currency Symbols
+    const CURRENCY_SYMBOLS = {
+      INR: "₹",
+      USD: "$",
+      EUR: "€",
+      GBP: "£",
+      AED: "AED ",
+      CAD: "CA$",
+      SGD: "SG$"
+    };
+
+    // Helper: Format Currency
+    function formatCurrency(amount, currencyCode = "INR") {
+      const sym = CURRENCY_SYMBOLS[currencyCode] || "₹";
+      const formatted = Number(amount || 0).toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+      return `${sym}${formatted}`;
+    }
+
+    // Number to Indian Words Converter (Rupees, Lakhs, Crores)
+    function numberToIndianWords(num) {
+      if (!num || isNaN(num) || num <= 0) return "Zero Rupees Only";
+      
+      const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+      const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+      function inWords(n) {
+        if ((n = n.toString()).length > 9) return 'Overflow';
+        let n_array = ('000000000' + n).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+        if (!n_array) return '';
+        let str = '';
+        str += (n_array[1] != 0) ? (a[Number(n_array[1])] || b[n_array[1][0]] + ' ' + a[n_array[1][1]]) + 'Crore ' : '';
+        str += (n_array[2] != 0) ? (a[Number(n_array[2])] || b[n_array[2][0]] + ' ' + a[n_array[2][1]]) + 'Lakh ' : '';
+        str += (n_array[3] != 0) ? (a[Number(n_array[3])] || b[n_array[3][0]] + ' ' + a[n_array[3][1]]) + 'Thousand ' : '';
+        str += (n_array[4] != 0) ? (a[Number(n_array[4])] || b[n_array[4][0]] + ' ' + a[n_array[4][1]]) + 'Hundred ' : '';
+        str += (n_array[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n_array[5])] || b[n_array[5][0]] + ' ' + a[n_array[5][1]]) : '';
+        return str;
+      }
+
+      const parts = Number(num).toFixed(2).split('.');
+      const rupees = parseInt(parts[0]);
+      const paise = parseInt(parts[1]);
+
+      let result = inWords(rupees).trim() + " Rupees";
+      if (paise > 0) {
+        result += " and " + inWords(paise).trim() + " Paise";
+      }
+      return result + " Only";
+    }
+
+    // Populate State Dropdowns
+    function populateStateDropdowns() {
+      const sellerStateSelect = document.getElementById("seller-state");
+      const clientPosSelect = document.getElementById("client-pos-state");
+
+      sellerStateSelect.innerHTML = "";
+      clientPosSelect.innerHTML = "";
+
+      GST_STATES.forEach(st => {
+        const opt1 = document.createElement("option");
+        opt1.value = st.code;
+        opt1.textContent = `${st.name} (${st.code})`;
+        if (st.code === "33") opt1.selected = true; // Tamil Nadu default
+        sellerStateSelect.appendChild(opt1);
+
+        const opt2 = document.createElement("option");
+        opt2.value = st.code;
+        opt2.textContent = `${st.name} (${st.code})`;
+        if (st.code === "27") opt2.selected = true; // Maharashtra default
+        clientPosSelect.appendChild(opt2);
+      });
+    }
+
+    // Render Line Items in Form
+    function renderLineItemsForm() {
+      const container = document.getElementById("items-container");
+      container.innerHTML = "";
+
+      lineItems.forEach((item, index) => {
+        const itemDiv = document.createElement("div");
+        itemDiv.className = "p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3 relative group";
+        
+        let sacOptionsHtml = COMMON_SAC_CODES.map(sac => 
+          `<option value="${sac.code}" ${item.sac === sac.code ? 'selected' : ''}>${sac.label}</option>`
+        ).join("");
+
+        itemDiv.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold flex items-center justify-center">${index + 1}</span>
+              Item #${index + 1}
+            </span>
+            ${lineItems.length > 1 ? `
+              <button type="button" onclick="deleteLineItem(${item.id})" class="text-slate-400 hover:text-rose-600 transition p-1" title="Delete Item">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            ` : ''}
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Service Description <span class="text-rose-500">*</span></label>
+            <input type="text" value="${item.desc}" onchange="updateLineItem(${item.id}, 'desc', this.value)" class="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Website Frontend Redesign">
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div>
+              <label class="block text-[11px] font-medium text-slate-600 mb-0.5">SAC Code</label>
+              <select onchange="updateLineItem(${item.id}, 'sac', this.value)" class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500">
+                ${sacOptionsHtml}
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Qty / Units</label>
+              <input type="number" min="0.1" step="any" value="${item.qty}" onchange="updateLineItem(${item.id}, 'qty', parseFloat(this.value) || 0)" class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Rate / Price</label>
+              <input type="number" min="0" step="any" value="${item.rate}" onchange="updateLineItem(${item.id}, 'rate', parseFloat(this.value) || 0)" class="w-full text-xs font-mono border border-slate-300 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-600 mb-0.5">GST Rate (%)</label>
+              <select onchange="updateLineItem(${item.id}, 'gstRate', parseFloat(this.value))" class="w-full text-xs border border-slate-300 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-indigo-500">
+                <option value="18" ${item.gstRate === 18 ? 'selected' : ''}>18% (Standard Services)</option>
+                <option value="12" ${item.gstRate === 12 ? 'selected' : ''}>12%</option>
+                <option value="5" ${item.gstRate === 5 ? 'selected' : ''}>5%</option>
+                <option value="0" ${item.gstRate === 0 ? 'selected' : ''}>0% (Exempt / LUT)</option>
+              </select>
+            </div>
+          </div>
+        `;
+        container.appendChild(itemDiv);
+      });
+
+      lucide.createIcons();
+    }
+
+    function addLineItem() {
+      const newId = Date.now();
+      lineItems.push({
+        id: newId,
+        desc: "Consulting & Technical Advisory",
+        sac: "998311",
+        qty: 1,
+        unit: "Unit",
+        rate: 15000,
+        gstRate: 18
+      });
+      renderLineItemsForm();
+      calculateAndUpdatePreview();
+    }
+
+    function deleteLineItem(id) {
+      if (lineItems.length <= 1) return;
+      lineItems = lineItems.filter(item => item.id !== id);
+      renderLineItemsForm();
+      calculateAndUpdatePreview();
+    }
+
+    function updateLineItem(id, field, value) {
+      lineItems = lineItems.map(item => {
+        if (item.id === id) {
+          return { ...item, [field]: value };
+        }
+        return item;
+      });
+      calculateAndUpdatePreview();
+    }
+
+    // Determine GST tax model based on state codes or export mode
+    function getTaxConfiguration() {
+      const selectedRadio = document.querySelector('input[name="supplyType"]:checked')?.value || 'auto';
+      const sellerStateCode = document.getElementById("seller-state").value;
+      const clientPosCode = document.getElementById("client-pos-state").value;
+
+      if (selectedRadio === 'export_lut') {
+        return {
+          type: 'export_lut',
+          label: 'Export of Services (Under LUT)',
+          taxLabel: '0% (Exempt under LUT)',
+          isZeroRated: true,
+          cgstRate: 0,
+          sgstRate: 0,
+          igstRate: 0
+        };
+      }
+
+      if (selectedRadio === 'export_igst') {
+        return {
+          type: 'export_igst',
+          label: 'Export of Services (With Tax)',
+          taxLabel: 'IGST @ 18%',
+          isZeroRated: false,
+          cgstRate: 0,
+          sgstRate: 0,
+          igstRate: 18
+        };
+      }
+
+      // Auto-detect: if both state codes match => Intra-State (CGST + SGST)
+      // Otherwise => Inter-State (IGST)
+      if (sellerStateCode === clientPosCode) {
+        return {
+          type: 'intra',
+          label: 'Intra-State Supply (Within State)',
+          taxLabel: 'CGST 9% + SGST 9%',
+          isZeroRated: false,
+          cgstRate: 9,
+          sgstRate: 9,
+          igstRate: 0
+        };
+      } else {
+        return {
+          type: 'inter',
+          label: 'Inter-State Supply',
+          taxLabel: 'IGST @ 18%',
+          isZeroRated: false,
+          cgstRate: 0,
+          sgstRate: 0,
+          igstRate: 18
+        };
+      }
+    }
+
+    // Generate UPI QR Code
+    function updateUpiQrCode(upiId, payeeName, amount) {
+      const upiContainer = document.getElementById("upi-qrcode");
+      upiContainer.innerHTML = "";
+
+      if (!upiId || !upiId.includes('@')) {
+        upiContainer.innerHTML = `<div class="w-20 h-20 flex items-center justify-center text-[10px] text-slate-400">No UPI</div>`;
+        return;
+      }
+
+      // Standard NPCI UPI URI
+      const encodedName = encodeURIComponent(payeeName || "Freelancer");
+      const cleanAmt = Math.round(amount * 100) / 100;
+      const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodedName}&am=${cleanAmt}&cu=INR&tn=Invoice Payment`;
+
+      try {
+        qrcodeInstance = new QRCode(upiContainer, {
+          text: upiUri,
+          width: 82,
+          height: 82,
+          colorDark: "#1e1b4b",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (err) {
+        console.error("QR Code generation error:", err);
+      }
+    }
+
+    // Main calculation & preview sync engine
+    function calculateAndUpdatePreview() {
+      const currency = document.getElementById("invoice-currency").value;
+      const docTitle = document.getElementById("invoice-title").value;
+      const invoiceNo = document.getElementById("invoice-number").value || "INV-2026-001";
+      const invoiceDateVal = document.getElementById("invoice-date").value;
+      const dueDateVal = document.getElementById("invoice-due-date").value;
+      const isRcm = document.getElementById("reverse-charge").checked;
+
+      // Freelancer fields
+      const sellerName = document.getElementById("seller-name").value || "My Freelance Studio";
+      const sellerGstin = document.getElementById("seller-gstin").value.toUpperCase();
+      const sellerPan = document.getElementById("seller-pan").value.toUpperCase();
+      const sellerEmail = document.getElementById("seller-email").value;
+      const sellerPhone = document.getElementById("seller-phone").value;
+      const sellerAddress = document.getElementById("seller-address").value;
+      const sellerStateCode = document.getElementById("seller-state").value;
+      const sellerStateObj = GST_STATES.find(s => s.code === sellerStateCode);
+      const sellerStateName = sellerStateObj ? `${sellerStateObj.name} (${sellerStateCode})` : sellerStateCode;
+
+      // Client fields
+      const clientName = document.getElementById("client-name").value || "Client Name";
+      const clientIsReg = document.getElementById("client-is-registered").checked;
+      const clientGstin = document.getElementById("client-gstin").value.toUpperCase();
+      const clientEmail = document.getElementById("client-email").value;
+      const clientAddress = document.getElementById("client-address").value;
+      const clientPosCode = document.getElementById("client-pos-state").value;
+      const clientPosObj = GST_STATES.find(s => s.code === clientPosCode);
+      const clientPosName = clientPosObj ? `${clientPosObj.name} (${clientPosCode})` : clientPosCode;
+
+      // Bank info
+      const bankHolder = document.getElementById("bank-holder").value;
+      const bankName = document.getElementById("bank-name").value;
+      const bankAcc = document.getElementById("bank-account").value;
+      const bankIfsc = document.getElementById("bank-ifsc").value;
+      const bankUpi = document.getElementById("bank-upi").value;
+      const bankBranch = document.getElementById("bank-branch").value;
+      const bankSwift = document.getElementById("bank-swift").value;
+
+      // Signatory & Terms
+      const signatoryName = document.getElementById("signatory-name").value;
+      const signatoryLabel = document.getElementById("signatory-label").value;
+      const termsText = document.getElementById("invoice-terms").value;
+      const lutArn = document.getElementById("lut-arn").value;
+
+      // Tax Logic
+      const taxConfig = getTaxConfiguration();
+
+      // Show/Hide LUT input container and Preview Banner
+      const lutArnContainer = document.getElementById("lut-arn-container");
+      const previewLutBanner = document.getElementById("preview-lut-banner");
+      if (taxConfig.type === 'export_lut') {
+        lutArnContainer.classList.remove("hidden");
+        previewLutBanner.classList.remove("hidden");
+        document.getElementById("preview-lut-arn").textContent = lutArn || "NOT PROVIDED";
+      } else {
+        lutArnContainer.classList.add("hidden");
+        previewLutBanner.classList.add("hidden");
+      }
+
+      // Update Header & General Preview Fields
+      document.getElementById("preview-doc-title").textContent = docTitle;
+      document.getElementById("preview-invoice-no").textContent = invoiceNo;
+      
+      const formatDate = (dStr) => {
+        if (!dStr) return "-";
+        const dateObj = new Date(dStr + "T00:00:00");
+        return dateObj.toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' });
+      };
+
+      document.getElementById("preview-invoice-date").textContent = formatDate(invoiceDateVal);
+      document.getElementById("preview-due-date").textContent = formatDate(dueDateVal);
+      document.getElementById("preview-rcm").textContent = isRcm ? "Yes" : "No";
+
+      // Seller Preview
+      document.getElementById("preview-seller-name").textContent = sellerName;
+      document.getElementById("preview-seller-address").textContent = sellerAddress;
+      document.getElementById("preview-seller-state").textContent = sellerStateName;
+      document.getElementById("preview-seller-gstin").textContent = sellerGstin || "UNREGISTERED";
+      document.getElementById("preview-seller-pan").textContent = sellerPan || "NA";
+      document.getElementById("preview-seller-contact").textContent = `Email: ${sellerEmail} | Ph: ${sellerPhone}`;
+
+      // Client Preview
+      document.getElementById("preview-client-name").textContent = clientName;
+      document.getElementById("preview-client-address").textContent = clientAddress;
+      
+      const clientGstinRow = document.getElementById("preview-client-gstin-row");
+      if (clientIsReg && clientGstin) {
+        clientGstinRow.style.display = "block";
+        document.getElementById("preview-client-gstin").textContent = clientGstin;
+      } else {
+        clientGstinRow.style.display = "block";
+        document.getElementById("preview-client-gstin").textContent = "Unregistered / B2C";
+      }
+
+      document.getElementById("preview-client-email-row").textContent = clientEmail ? `Email: ${clientEmail}` : "";
+      document.getElementById("preview-pos-name").textContent = clientPosName;
+      document.getElementById("preview-supply-type").textContent = taxConfig.label;
+      document.getElementById("preview-tax-type").textContent = taxConfig.taxLabel;
+
+      // Update Tax Determination Badge on Left Panel
+      const badge = document.getElementById("tax-determination-badge");
+      badge.innerHTML = `<i data-lucide="calculator" class="w-3.5 h-3.5"></i> <span>Detected: <strong>${taxConfig.label} (${taxConfig.taxLabel})</strong></span>`;
+
+      // Calculate Line Items
+      let taxableSubtotal = 0;
+      let totalCgst = 0;
+      let totalSgst = 0;
+      let totalIgst = 0;
+
+      const tableBody = document.getElementById("preview-table-body");
+      tableBody.innerHTML = "";
+
+      lineItems.forEach((item, idx) => {
+        const taxableVal = (item.qty || 0) * (item.rate || 0);
+        taxableSubtotal += taxableVal;
+
+        let itemTax = 0;
+        if (!taxConfig.isZeroRated) {
+          const itemRate = item.gstRate;
+          if (taxConfig.type === 'intra') {
+            const halfRate = itemRate / 2;
+            const cgstAmt = taxableVal * (halfRate / 100);
+            const sgstAmt = taxableVal * (halfRate / 100);
+            totalCgst += cgstAmt;
+            totalSgst += sgstAmt;
+            itemTax = cgstAmt + sgstAmt;
+          } else {
+            const igstAmt = taxableVal * (itemRate / 100);
+            totalIgst += igstAmt;
+            itemTax = igstAmt;
+          }
+        }
+
+        const lineTotal = taxableVal + itemTax;
+
+        const tr = document.createElement("tr");
+        tr.className = "border-b border-slate-100 hover:bg-slate-50/50 transition";
+        tr.innerHTML = `
+          <td class="py-3 px-2 text-center text-slate-400 font-mono">${idx + 1}</td>
+          <td class="py-3 px-3">
+            <div class="font-semibold text-slate-900">${item.desc}</div>
+          </td>
+          <td class="py-3 px-2 text-center font-mono text-slate-600">${item.sac}</td>
+          <td class="py-3 px-2 text-center font-mono">${item.qty}</td>
+          <td class="py-3 px-3 text-right font-mono">${formatCurrency(item.rate, currency)}</td>
+          <td class="py-3 px-3 text-right font-mono font-medium">${formatCurrency(taxableVal, currency)}</td>
+          <td class="py-3 px-3 text-right font-mono font-bold text-slate-900">${formatCurrency(lineTotal, currency)}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+
+      // Tax calculations
+      const totalTax = totalCgst + totalSgst + totalIgst;
+      const exactGrandTotal = taxableSubtotal + totalTax;
+      const roundedGrandTotal = Math.round(exactGrandTotal);
+      const roundOffDifference = roundedGrandTotal - exactGrandTotal;
+
+      // Update Breakdown in UI
+      document.getElementById("preview-subtotal").textContent = formatCurrency(taxableSubtotal, currency);
+
+      const rowCgst = document.getElementById("row-cgst");
+      const rowSgst = document.getElementById("row-sgst");
+      const rowIgst = document.getElementById("row-igst");
+
+      if (taxConfig.type === 'intra') {
+        rowCgst.style.display = "flex";
+        rowSgst.style.display = "flex";
+        rowIgst.style.display = "none";
+        document.getElementById("preview-cgst-amt").textContent = formatCurrency(totalCgst, currency);
+        document.getElementById("preview-sgst-amt").textContent = formatCurrency(totalSgst, currency);
+      } else if (taxConfig.type === 'export_lut') {
+        rowCgst.style.display = "none";
+        rowSgst.style.display = "none";
+        rowIgst.style.display = "flex";
+        document.getElementById("preview-igst-rate").textContent = "0";
+        document.getElementById("preview-igst-amt").textContent = formatCurrency(0, currency);
+      } else {
+        rowCgst.style.display = "none";
+        rowSgst.style.display = "none";
+        rowIgst.style.display = "flex";
+        document.getElementById("preview-igst-rate").textContent = "18";
+        document.getElementById("preview-igst-amt").textContent = formatCurrency(totalIgst, currency);
+      }
+
+      document.getElementById("preview-roundoff").textContent = formatCurrency(roundOffDifference, currency);
+      document.getElementById("preview-grand-total").textContent = formatCurrency(roundedGrandTotal, currency);
+
+      // Amount in Words
+      if (currency === "INR") {
+        document.getElementById("preview-amount-words").textContent = numberToIndianWords(roundedGrandTotal);
+      } else {
+        document.getElementById("preview-amount-words").textContent = `${roundedGrandTotal.toLocaleString('en-US')} ${currency} Only`;
+      }
+
+      // Bank Details
+      document.getElementById("preview-bank-holder").textContent = bankHolder;
+      document.getElementById("preview-bank-name").textContent = bankName;
+      document.getElementById("preview-bank-acc").textContent = bankAcc;
+      document.getElementById("preview-bank-ifsc").textContent = bankIfsc;
+      document.getElementById("preview-bank-extra").textContent = bankBranch;
+      
+      const swiftRow = document.getElementById("preview-bank-swift-row");
+      if (bankSwift) {
+        swiftRow.style.display = "block";
+        swiftRow.textContent = bankSwift;
+      } else {
+        swiftRow.style.display = "none";
+      }
+
+      // UPI QR Code Update
+      document.getElementById("preview-upi-id").textContent = bankUpi || "N/A";
+      updateUpiQrCode(bankUpi, bankHolder, roundedGrandTotal);
+
+      // Signatory and terms
+      document.getElementById("preview-signatory-business").textContent = sellerName;
+      document.getElementById("preview-signatory-title").textContent = signatoryName;
+      document.getElementById("preview-signatory-sub").textContent = signatoryLabel;
+      document.getElementById("preview-terms-text").textContent = termsText;
+
+      lucide.createIcons();
+    }
+
+    // Auto-detect State Code when GSTIN changes
+    function setupGstinListeners() {
+      const sellerGstinInput = document.getElementById("seller-gstin");
+      sellerGstinInput.addEventListener("input", function() {
+        const val = this.value.trim().toUpperCase();
+        if (val.length >= 2) {
+          const stateCode = val.substring(0, 2);
+          const stateExists = GST_STATES.some(s => s.code === stateCode);
+          if (stateExists) {
+            document.getElementById("seller-state").value = stateCode;
+          }
+        }
+        calculateAndUpdatePreview();
+      });
+
+      const clientGstinInput = document.getElementById("client-gstin");
+      clientGstinInput.addEventListener("input", function() {
+        const val = this.value.trim().toUpperCase();
+        if (val.length >= 2) {
+          const stateCode = val.substring(0, 2);
+          const stateExists = GST_STATES.some(s => s.code === stateCode);
+          if (stateExists) {
+            document.getElementById("client-pos-state").value = stateCode;
+          }
+        }
+        calculateAndUpdatePreview();
+      });
+    }
+
+    // Theme Selector
+    function setupThemeSelector() {
+      const buttons = document.querySelectorAll("#theme-selector button");
+      const sheet = document.getElementById("invoice-sheet");
+
+      buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          buttons.forEach(b => b.classList.remove("ring-indigo-600", "scale-110"));
+          btn.classList.add("ring-indigo-600", "scale-110");
+
+          const themeName = btn.dataset.theme;
+          sheet.className = sheet.className.replace(/theme-[a-z]+/g, '');
+          sheet.classList.add(themeName);
+        });
+      });
+    }
+
+    // LocalStorage Save & Load
+    const STORAGE_KEY = "freelancer_gst_profile_data";
+
+    function saveProfileToLocalStorage() {
+      const profile = {
+        sellerName: document.getElementById("seller-name").value,
+        sellerGstin: document.getElementById("seller-gstin").value,
+        sellerPan: document.getElementById("seller-pan").value,
+        sellerEmail: document.getElementById("seller-email").value,
+        sellerPhone: document.getElementById("seller-phone").value,
+        sellerAddress: document.getElementById("seller-address").value,
+        sellerState: document.getElementById("seller-state").value,
+        bankHolder: document.getElementById("bank-holder").value,
+        bankName: document.getElementById("bank-name").value,
+        bankAcc: document.getElementById("bank-account").value,
+        bankIfsc: document.getElementById("bank-ifsc").value,
+        bankUpi: document.getElementById("bank-upi").value,
+        bankBranch: document.getElementById("bank-branch").value,
+        bankSwift: document.getElementById("bank-swift").value,
+        signatoryName: document.getElementById("signatory-name").value,
+        signatoryLabel: document.getElementById("signatory-label").value,
+        lutArn: document.getElementById("lut-arn").value
+      };
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+
+      // Visual feedback
+      const btn = document.getElementById("btn-save-draft");
+      const origText = btn.innerHTML;
+      btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> <span class="text-emerald-700">Saved!</span>`;
+      lucide.createIcons();
+      setTimeout(() => {
+        btn.innerHTML = origText;
+        lucide.createIcons();
+      }, 2000);
+    }
+
+    function loadProfileFromLocalStorage() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return;
+        const profile = JSON.parse(saved);
+        if (profile.sellerName) document.getElementById("seller-name").value = profile.sellerName;
+        if (profile.sellerGstin) document.getElementById("seller-gstin").value = profile.sellerGstin;
+        if (profile.sellerPan) document.getElementById("seller-pan").value = profile.sellerPan;
+        if (profile.sellerEmail) document.getElementById("seller-email").value = profile.sellerEmail;
+        if (profile.sellerPhone) document.getElementById("seller-phone").value = profile.sellerPhone;
+        if (profile.sellerAddress) document.getElementById("seller-address").value = profile.sellerAddress;
+        if (profile.sellerState) document.getElementById("seller-state").value = profile.sellerState;
+        if (profile.bankHolder) document.getElementById("bank-holder").value = profile.bankHolder;
+        if (profile.bankName) document.getElementById("bank-name").value = profile.bankName;
+        if (profile.bankAcc) document.getElementById("bank-account").value = profile.bankAcc;
+        if (profile.bankIfsc) document.getElementById("bank-ifsc").value = profile.bankIfsc;
+        if (profile.bankUpi) document.getElementById("bank-upi").value = profile.bankUpi;
+        if (profile.bankBranch) document.getElementById("bank-branch").value = profile.bankBranch;
+        if (profile.bankSwift) document.getElementById("bank-swift").value = profile.bankSwift;
+        if (profile.signatoryName) document.getElementById("signatory-name").value = profile.signatoryName;
+        if (profile.signatoryLabel) document.getElementById("signatory-label").value = profile.signatoryLabel;
+        if (profile.lutArn) document.getElementById("lut-arn").value = profile.lutArn;
+      } catch (e) {
+        console.error("Error loading profile:", e);
+      }
+    }
+
+    // Set Default Dates (Today & 15 days later)
+    function setDefaultDates() {
+      const today = new Date();
+      const dueDate = new Date();
+      dueDate.setDate(today.getDate() + 15);
+
+      const toISO = (d) => d.toISOString().split("T")[0];
+      document.getElementById("invoice-date").value = toISO(today);
+      document.getElementById("invoice-due-date").value = toISO(dueDate);
+    }
+
+    // Attach All Event Listeners
+    function attachEventListeners() {
+      const inputs = document.querySelectorAll("input, select, textarea");
+      inputs.forEach(el => {
+        el.addEventListener("input", calculateAndUpdatePreview);
+        el.addEventListener("change", calculateAndUpdatePreview);
+      });
+
+      document.getElementById("btn-add-item").addEventListener("click", addLineItem);
+      document.getElementById("btn-save-draft").addEventListener("click", saveProfileToLocalStorage);
+      document.getElementById("btn-print").addEventListener("click", () => {
+        window.print();
+      });
+
+      document.getElementById("btn-reset").addEventListener("click", () => {
+        if (confirm("Reset to default sample invoice data?")) {
+          localStorage.removeItem(STORAGE_KEY);
+          window.location.reload();
+        }
+      });
+
+      // Toggle Client GSTIN box if registered checkbox changes
+      document.getElementById("client-is-registered").addEventListener("change", (e) => {
+        const box = document.getElementById("client-gstin-box");
+        box.style.opacity = e.target.checked ? "1" : "0.5";
+      });
+    }
+
+    // Initialize App
+    window.addEventListener("DOMContentLoaded", () => {
+      populateStateDropdowns();
+      setDefaultDates();
+      loadProfileFromLocalStorage();
+      renderLineItemsForm();
+      setupGstinListeners();
+      setupThemeSelector();
+      attachEventListeners();
+      calculateAndUpdatePreview();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
